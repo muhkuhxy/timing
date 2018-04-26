@@ -1,5 +1,7 @@
 var util = {
-  msToMin: ms => Math.floor(ms / 1000 / 60)
+  msToMin: ms => Math.floor(ms / 1000 / 60),
+  load: () => JSON.parse(window.localStorage.getItem('tasks') || '[]'),
+  save: (tasks) => window.localStorage.setItem('tasks', JSON.stringify(tasks))
 }
 
 const store = new Vuex.Store({
@@ -19,6 +21,9 @@ const store = new Vuex.Store({
     current: null
   },
   mutations: {
+    load: function (state, tasks) {
+      state.tasks = tasks
+    },
     changeTask: function (state, task) {
       function activate (newCurrent) {
         newCurrent.active = true
@@ -41,6 +46,7 @@ const store = new Vuex.Store({
       } else {
         activate(newCurrent)
       }
+      util.save(state.tasks)
     },
     newTask: function (state, task) {
       state.tasks.push({
@@ -48,6 +54,7 @@ const store = new Vuex.Store({
         time: 0,
         active: false
       })
+      util.save(state.tasks)
     }
   }
 })
@@ -57,6 +64,9 @@ Vue.component('Tasks', {
     changeTask: function (task) {
       this.$store.commit('changeTask', task)
     }
+  },
+  created: function () {
+    this.$store.commit('load', util.load())
   },
   template: `
     <div>
