@@ -2,51 +2,77 @@ var util = {
   msToMin: ms => Math.floor(ms / 1000 / 60)
 }
 
-Vue.component('Tasks', {
-  methods: {
-    changeTask: function (task) {
-      let now = Date.now()
-      let newCurrent = this.tasks.find(x => x.text === task)
-      if (this.current) {
-        var prev = this.tasks.find(x => x.text === this.current.text)
-        prev.time += util.msToMin(now - this.current.started)
-        prev.active = false
+const store = new Vuex.Store({
+  state: {
+    tasks: [
+      {
+        text: 'erstens',
+        time: 0,
+        active: false
+      },
+      {
+        text: 'zweitens',
+        time: 123,
+        active: false
       }
-      if (this.current && this.current.text === newCurrent.text) {
-        this.current = null
-      }
-      else {
+    ],
+    current: null
+  },
+  mutations: {
+    changeTask: function (state, task) {
+      function activate (newCurrent) {
         newCurrent.active = true
-        this.current = {
+        state.current = {
           text: task,
           started: now
         }
       }
+      let now = Date.now()
+      let newCurrent = state.tasks.find(x => x.text === task)
+      if (state.current) {
+        var prev = state.tasks.find(x => x.text === state.current.text)
+        prev.time += util.msToMin(now - state.current.started)
+        prev.active = false
+        if (state.current.text === newCurrent.text) {
+          state.current = null
+        } else {
+          activate(newCurrent)
+        }
+      } else {
+        activate(newCurrent)
+      }
+    },
+    newTask: function (state, task) {
+      state.tasks.push({
+        text: task,
+        time: 0,
+        active: false
+      })
+    }
+  }
+})
+
+Vue.component('Tasks', {
+  methods: {
+    changeTask: function (task) {
+      this.$store.commit('changeTask', task)
     }
   },
   template: `
     <div>
+      <NewTask></NewTask>
       <ul>
-        <Task v-for="task in tasks" :task="task" v-on:selected="changeTask"></Task>
+        <li is="Task" v-for="task in tasks" :task="task" :key="task.text"></li>
       </ul>
       <CurrentTask :task="current"></CurrentTask>
     </div>
   `,
-  data: function () {
-    return {
-      tasks: [
-        {
-          text: 'erstens',
-          time: 0,
-          active: false
-        },
-        {
-          text: 'zweitens',
-          time: 123,
-          active: false
-        }
-      ],
-      current: null
+  computed: {
+    tasks: function () {
+      return this.$store.state.tasks
+    },
+    current: function () {
+      return this.$store.state.current
     }
   }
 })
@@ -54,11 +80,31 @@ Vue.component('Tasks', {
 Vue.component('Task', {
   props: ['task'],
   template: `
-    <li v-on:click="$emit('selected', task.text)">
+    <li v-on:click="select(task)">
       {{ task.text }} ({{ task.time }})
       <span v-if="task.active">*</span>
     </li>
-  `
+  `,
+  methods: {
+    select: function (task) {
+      this.$store.commit('changeTask', task.text)
+    }
+  }
+})
+
+Vue.component('NewTask', {
+  template: `<input placeholder="new task" type="text" @keyup.enter="submit" v-model="task">`,
+  data: function () {
+    return {
+      task: ''
+    }
+  },
+  methods: {
+    submit: function () {
+      this.$store.commit('newTask', this.task)
+      this.task = ''
+    }
+  }
 })
 
 Vue.component('CurrentTask', {
@@ -70,7 +116,8 @@ Vue.component('CurrentTask', {
 })
 
 var app = new Vue({
-    el: '#app'
+    el: '#app',
+    store
 })
 
 
