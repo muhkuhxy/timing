@@ -6,23 +6,16 @@ var util = {
 
 const store = new Vuex.Store({
   state: {
-    tasks: [
-      {
-        text: 'erstens',
-        time: 0,
-        active: false
-      },
-      {
-        text: 'zweitens',
-        time: 123,
-        active: false
-      }
-    ],
+    tasks: [],
     current: null
   },
   mutations: {
     load: function (state, tasks) {
       state.tasks = tasks
+      const active = state.tasks.filter(t => t.active)
+      if (active.length > 0) {
+        this.commit('changeTask', active[0].text)
+      }
     },
     changeTask: function (state, task) {
       function activate (newCurrent) {
@@ -46,6 +39,7 @@ const store = new Vuex.Store({
       } else {
         activate(newCurrent)
       }
+      document.title = 'Tasks - ' + ((state.current && state.current.text) || 'Not working on anything')
       util.save(state.tasks)
     },
     newTask: function (state, task) {
@@ -63,6 +57,9 @@ Vue.component('Tasks', {
   methods: {
     changeTask: function (task) {
       this.$store.commit('changeTask', task)
+    },
+    reset: function () {
+      this.tasks.forEach(t => {t.time = 0})
     }
   },
   created: function () {
@@ -70,11 +67,12 @@ Vue.component('Tasks', {
   },
   template: `
     <div>
-      <NewTask></NewTask>
       <ul>
         <li is="Task" v-for="task in tasks" :task="task" :key="task.text"></li>
       </ul>
-      <CurrentTask :task="current"></CurrentTask>
+      <!--CurrentTask :task="current"></CurrentTask-->
+      <NewTask></NewTask>
+      <button @click="reset()">Reset</button>
     </div>
   `,
   computed: {
@@ -90,9 +88,8 @@ Vue.component('Tasks', {
 Vue.component('Task', {
   props: ['task'],
   template: `
-    <li v-on:click="select(task)">
+    <li class="task" :class="task.active ? 'active' : ''" v-on:click="select(task)">
       {{ task.text }} ({{ task.time }})
-      <span v-if="task.active">*</span>
     </li>
   `,
   methods: {

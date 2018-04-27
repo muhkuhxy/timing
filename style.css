@@ -1,0 +1,25 @@
+
+body {
+color: #232931;
+font-family: Verdana;
+}
+
+ul{
+margin: 1em 0;
+padding: 0;
+}
+
+.task {
+padding: 0.5em 1em;
+cursor: pointer;
+list-style-type: none;
+}
+
+.task:hover {
+background-color: #EEEEEE;
+}
+
+.task.active {
+background-color: #4ECCA3;
+}
+
