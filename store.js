@@ -1,15 +1,17 @@
 const MINUTE = 60 * 1000
 
 const util = {
-  msToMin: ms => Math.floor(ms / MINUTE),
   load: () => JSON.parse(window.localStorage.getItem('tasks') || '[]'),
   save: (tasks) => window.localStorage.setItem('tasks', JSON.stringify(tasks))
 }
 
-const store = new Vuex.Store({
+export default new Vuex.Store({
   state: {
     tasks: [],
-    current: null
+    current: {
+      task: null,
+      started: null
+    }
   },
   actions: {
     load: function ({ commit }) {
@@ -17,7 +19,7 @@ const store = new Vuex.Store({
     },
     tick: function ({ commit, state, dispatch }) {
       window.setTimeout(() => {
-        if (state.current) {
+        if (state.current.task) {
           commit('updateTime')
           dispatch('tick')
         }
@@ -29,41 +31,40 @@ const store = new Vuex.Store({
       state.tasks = tasks
       const active = state.tasks.filter(t => t.active)
       if (active.length > 0) {
-        this.commit('changeTask', active[0].text)
+        this.commit('changeTask', active[0])
       }
     },
     updateTime: function (state) {
-      const task = state.tasks.find(x => x.text === state.current.text),
-        now = Date.now(),
+      const now = Date.now(),
         elapsed = now - state.current.started
-      task.time += util.msToMin(elapsed)
+      state.current.task.time += elapsed
       state.current.started = now
     },
     changeTask: function (state, task) {
       const store = this
-      function activate (newCurrent) {
-        newCurrent.active = true
-        state.current = {
-          text: task,
-          started: now
-        }
+      function setTitle(task) {
+        document.title = 'Tasks - ' + (task ? task.text : 'Not working on anything')
+      }
+      function stopCurrentTask () {
+        store.commit('updateTime')
+        state.current.task.active = false
+        state.current.task = null
+      }
+      function startTask (task) {
+        task.active = true
+        state.current.task = task
+        state.current.started = Date.now()
         store.dispatch('tick')
       }
-      let now = Date.now()
-      let newCurrent = state.tasks.find(x => x.text === task)
-      if (state.current) {
-        var prev = state.tasks.find(x => x.text === state.current.text)
-        prev.time += util.msToMin(now - state.current.started)
-        prev.active = false
-        if (state.current.text === newCurrent.text) {
-          state.current = null
-        } else {
-          activate(newCurrent)
-        }
+      if (!state.current.task) {
+        startTask(task)
+      } else if (state.current.task === task) {
+        stopCurrentTask()
       } else {
-        activate(newCurrent)
+        stopCurrentTask()
+        startTask(task)
       }
-      document.title = 'Tasks - ' + ((state.current && state.current.text) || 'Not working on anything')
+      setTitle(state.current.task)
       util.save(state.tasks)
     },
     newTask: function (state, task) {
@@ -76,5 +77,3 @@ const store = new Vuex.Store({
     }
   }
 })
-
-export default store

@@ -1,10 +1,5 @@
 import store from './store.js'
 
-const util = {
-  load: () => JSON.parse(window.localStorage.getItem('tasks') || '[]'),
-  save: (tasks) => window.localStorage.setItem('tasks', JSON.stringify(tasks))
-}
-
 Vue.component('Tasks', {
   methods: {
     changeTask: function (task) {
@@ -15,7 +10,7 @@ Vue.component('Tasks', {
     }
   },
   created: function () {
-    this.$store.commit('load', util.load())
+    this.$store.dispatch('load')
   },
   template: `
     <div>
@@ -40,13 +35,18 @@ Vue.component('Tasks', {
 Vue.component('Task', {
   props: ['task'],
   template: `
-    <li class="task" :class="task.active ? 'active' : ''" v-on:click="select(task)">
-      {{ task.text }} ({{ task.time }})
+    <li class="task" :class="task.active ? 'active' : ''" @click="select(task)">
+      {{ task.text }} ({{ this.task.time | minutes }})
     </li>
   `,
   methods: {
     select: function (task) {
-      this.$store.commit('changeTask', task.text)
+      this.$store.commit('changeTask', task)
+    }
+  },
+  filters: {
+    minutes: function (value) {
+      return Math.floor(value / 60 / 1000);
     }
   }
 })
