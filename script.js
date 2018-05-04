@@ -1,5 +1,7 @@
-var util = {
-  msToMin: ms => Math.floor(ms / 1000 / 60),
+const MINUTE = 60 * 1000
+
+const util = {
+  msToMin: ms => Math.floor(ms / MINUTE),
   load: () => JSON.parse(window.localStorage.getItem('tasks') || '[]'),
   save: (tasks) => window.localStorage.setItem('tasks', JSON.stringify(tasks))
 }
@@ -9,6 +11,16 @@ const store = new Vuex.Store({
     tasks: [],
     current: null
   },
+  actions: {
+    tick: function ({ commit, state, dispatch }) {
+      window.setTimeout(() => {
+        if (state.current) {
+          commit('updateTime')
+          dispatch('tick')
+        }
+      }, MINUTE)
+    }
+  },
   mutations: {
     load: function (state, tasks) {
       state.tasks = tasks
@@ -17,13 +29,22 @@ const store = new Vuex.Store({
         this.commit('changeTask', active[0].text)
       }
     },
+    updateTime: function (state) {
+      const task = state.tasks.find(x => x.text === state.current.text),
+        now = Date.now(),
+        elapsed = now - state.current.started
+      task.time += util.msToMin(elapsed)
+      state.current.started = now
+    },
     changeTask: function (state, task) {
+      const store = this
       function activate (newCurrent) {
         newCurrent.active = true
         state.current = {
           text: task,
           started: now
         }
+        store.dispatch('tick')
       }
       let now = Date.now()
       let newCurrent = state.tasks.find(x => x.text === task)
