@@ -41,20 +41,19 @@ export default new Vuex.Store({
       state.current.started = now
     },
     changeTask: function (state, task) {
-      const store = this
-      function setTitle(task) {
+      const setTitle = task => {
         document.title = 'Tasks - ' + (task ? task.text : 'Not working on anything')
       }
-      function stopCurrentTask () {
-        store.commit('updateTime')
+      const stopCurrentTask = () => {
+        this.commit('updateTime')
         state.current.task.active = false
         state.current.task = null
       }
-      function startTask (task) {
+      const startTask = task => {
         task.active = true
         state.current.task = task
         state.current.started = Date.now()
-        store.dispatch('tick')
+        this.dispatch('tick')
       }
       if (!state.current.task) {
         startTask(task)
