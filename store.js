@@ -39,6 +39,7 @@ export default new Vuex.Store({
         elapsed = now - state.current.started
       state.current.task.time += elapsed
       state.current.started = now
+      util.save(state.tasks)
     },
     changeTask: function (state, task) {
       const setTitle = task => {
@@ -64,7 +65,6 @@ export default new Vuex.Store({
         startTask(task)
       }
       setTitle(state.current.task)
-      util.save(state.tasks)
     },
     newTask: function (state, task) {
       state.tasks.push({
